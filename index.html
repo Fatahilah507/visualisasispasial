@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Latihan Soal TKA - Visualisasi Spasial Matematika</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js for 3D Visualizations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      height: 280px;
+      background: radial-gradient(circle, #f8fafc 0%, #e2e8f0 100%);
+      border-radius: 0.75rem;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col">
+
+  <!-- Header Section -->
+  <header class="bg-indigo-700 text-white shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="bg-indigo-600 p-2 rounded-lg">
+          <i data-lucide="box" class="w-6 h-6 text-indigo-200"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold leading-tight">Simulasi TKA Matematika</h1>
+          <p class="text-xs text-indigo-200">Subtes: Visualisasi Spasial (10 Soal Statis)</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4 bg-indigo-800/60 px-4 py-2 rounded-lg text-sm border border-indigo-600">
+        <div class="flex items-center gap-2">
+          <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
+          <span id="timer-display" class="font-mono font-bold text-amber-300">20:00</span>
+        </div>
+        <span class="text-indigo-400">|</span>
+        <div class="flex items-center gap-2">
+          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+          <span id="progress-display" class="font-medium">1 / 10 Soal</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="max-w-6xl mx-auto w-full px-4 py-6 flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6">
+    
+    <!-- Left Panel: Navigation & Info -->
+    <aside class="lg:col-span-1 flex flex-col gap-4 order-2 lg:order-1">
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <h3 class="font-semibold text-slate-700 mb-3 flex items-center gap-2">
+          <i data-lucide="grid" class="w-4 h-4 text-indigo-600"></i>
+          Navigasi Soal
+        </h3>
+        <div id="question-nav-grid" class="grid grid-cols-5 gap-2 mb-4">
+          <!-- Dynamically populated buttons -->
+        </div>
+        <div class="border-t pt-3 text-xs text-slate-500 space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-indigo-600 inline-block"></span>
+            <span>Soal Aktif</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+            <span>Sudah Dijawab</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-slate-200 inline-block"></span>
+            <span>Belum Dijawab</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Instructions Panel -->
+      <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-xl text-xs text-indigo-900">
+        <h4 class="font-bold flex items-center gap-1.5 mb-1.5 text-indigo-800">
+          <i data-lucide="eye" class="w-4 h-4"></i> Petunjuk Spasial
+        </h4>
+        <p>Gambar visualisasi berada pada posisi **statis (perspektif tetap)**. Gunakan kemampuan imajinasi dan bayangan mental spasial Anda untuk menyelesaikan soal.</p>
+      </div>
+    </aside>
+
+    <!-- Center/Right Panel: Question View -->
+    <section id="question-card" class="lg:col-span-3 bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between order-1 lg:order-2">
+      <div>
+        <!-- Question Header -->
+        <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+          <span class="text-xs font-bold uppercase tracking-wider bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full" id="question-category">
+            Category
+          </span>
+          <span class="text-xs text-slate-400 font-medium" id="question-type-badge">Tipe Soal</span>
+        </div>
+
+        <!-- Question Text -->
+        <h2 class="text-base sm:text-lg font-semibold text-slate-800 mb-4" id="question-text">
+          Loading soal...
+        </h2>
+
+        <!-- Main 3D Canvas / Visual Box -->
+        <div class="mb-6">
+          <div class="canvas-container shadow-inner border border-slate-200" id="main-canvas-box">
+            <div class="absolute top-2 left-2 bg-slate-900/60 text-white text-[11px] px-2.5 py-1 rounded backdrop-blur pointer-events-none flex items-center gap-1">
+              <i data-lucide="lock" class="w-3 h-3"></i> Tampilan Statis
+            </div>
+          </div>
+        </div>
+
+        <!-- Options Grid -->
+        <div class="space-y-3 mb-6" id="options-container">
+          <!-- Options rendered dynamically -->
+        </div>
+
+        <!-- Explanation Section (Hidden until answered) -->
+        <div id="explanation-box" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+          <h4 class="font-bold text-amber-900 flex items-center gap-2 mb-1 text-sm">
+            <i data-lucide="lightbulb" class="w-4 h-4 text-amber-600"></i> Pembahasan Spasial:
+          </h4>
+          <p id="explanation-text" class="text-xs sm:text-sm text-amber-800 leading-relaxed"></p>
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="flex justify-between items-center pt-4 border-t border-slate-100">
+        <button id="btn-prev" onclick="navigateQuestion(-1)" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition text-sm font-medium flex items-center gap-1 disabled:opacity-40">
+          <i data-lucide="chevron-left" class="w-4 h-4"></i> Sebelumnya
+        </button>
+        <button id="btn-next" onclick="navigateQuestion(1)" class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium flex items-center gap-1">
+          Selanjutnya <i data-lucide="chevron-right" class="w-4 h-4"></i>
+        </button>
+        <button id="btn-submit" onclick="showScoreModal()" class="hidden px-5 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition text-sm font-medium flex items-center gap-1">
+          Selesai & Kirim <i data-lucide="send" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Result Modal -->
+  <div id="result-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 text-center shadow-2xl transform transition-all">
+      <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i data-lucide="award" class="w-8 h-8"></i>
+      </div>
+      <h2 class="text-2xl font-bold text-slate-800 mb-1">Hasil Evaluasi TKA</h2>
+      <p class="text-sm text-slate-500 mb-6">Subtes Visualisasi Spasial (10 Soal)</p>
+
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-6 flex justify-around items-center">
+        <div>
+          <div class="text-3xl font-extrabold text-indigo-600" id="final-score">0</div>
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Nilai Akhir</div>
+        </div>
+        <div class="h-10 w-px bg-slate-200"></div>
+        <div>
+          <div class="text-3xl font-extrabold text-slate-700" id="final-correct">0/10</div>
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Jawaban Benar</div>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-600 mb-6 leading-relaxed" id="performance-feedback">
+        Analisis kemampuan spasial Anda sedang disiapkan...
+      </p>
+
+      <div class="flex gap-3">
+        <button onclick="reviewAnswers()" class="flex-1 py-2.5 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 text-sm transition">
+          Pembahasan
+        </button>
+        <button onclick="restartTest()" class="flex-1 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 text-sm transition">
+          Coba Lagi
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- 10 DATASET SOAL TKA VISUALISASI SPASIAL BARU (STANDAR ASESMEN/TKA) ---
+    const questions = [
+      {
+        id: 1,
+        category: "Konstruksi Bangun Ruang",
+        type: "Jumlah Kubus Penyusun",
+        question: "Gambar memperlihatkan konstruksi susunan kubus berukuran sama. Berapakah jumlah seluruh kubus yang membentuk konstruksi bangun tersebut (termasuk kubus yang tertutup di bawahnya)?",
+        cubes: [
+          // Baris Belakang (Z = -1): tinggi 3
+          { pos: [0, 0, -1], color: 0x64748b }, { pos: [0, 1, -1], color: 0x64748b }, { pos: [0, 2, -1], color: 0x64748b },
+          // Baris Tengah (Z = 0): tinggi 4 di tengah, tinggi 2 di samping
+          { pos: [-1, 0, 0], color: 0x64748b }, { pos: [-1, 1, 0], color: 0x64748b },
+          { pos: [0, 0, 0], color: 0x64748b }, { pos: [0, 1, 0], color: 0x64748b }, { pos: [0, 2, 0], color: 0x64748b }, { pos: [0, 3, 0], color: 0x3b82f6 },
+          { pos: [1, 0, 0], color: 0x64748b }, { pos: [1, 1, 0], color: 0x64748b },
+          // Baris Depan (Z = 1): tinggi 1 di depan
+          { pos: [0, 0, 1], color: 0x10b981 }, { pos: [1, 0, 1], color: 0xf59e0b }
+        ],
+        optionsType: "text-pilihan",
+        options: [
+          { id: 'A', text: "12 Kubus", isCorrect: false },
+          { id: 'B', text: "13 Kubus", isCorrect: false },
+          { id: 'C', text: "14 Kubus", isCorrect: true },
+          { id: 'D', text: "15 Kubus", isCorrect: false }
+        ],
+        explanation: "Penghitungan kubus berdasarkan tiang/posisi alas:\n- Baris belakang (tengah): 3 kubus\n- Baris tengah (kiri): 2 kubus\n- Baris tengah (pusat): 4 kubus\n- Baris tengah (kanan): 2 kubus\n- Baris depan (pusat): 1 kubus\n- Baris depan (kanan): 1 kubus\nTotal kubus = 3 + 2 + 4 + 2 + 1 + 1 = 14 kubus."
+      },
+      {
+        id: 2,
+        category: "Visualisasi Spasial",
+        type: "Tampak Depan",
+        question: "Amati susunan kubus warna-warni berikut. Manakah profil Tampak Depan yang paling sesuai?",
+        cubes: [
+          { pos: [-1, 0, 0], color: 0xef4444 }, // Merah (Kiri Bawah)
+          { pos: [-1, 1, 0], color: 0x3b82f6 }, // Biru (Kiri Atas)
+          { pos: [0, 0, 0], color: 0x10b981 },  // Hijau (Tengah Bawah)
+          { pos: [1, 0, 0], color: 0xf59e0b },  // Kuning (Kanan Bawah)
+          { pos: [0, 0, 1], color: 0x8b5cf6 }   // Ungu (Menutupi Hijau)
+        ],
+        optionsType: "2d-grid-3x2",
+        options: [
+          { id: 'A', grid: [[0x3b82f6, null, null], [0xef4444, 0x8b5cf6, 0xf59e0b]], isCorrect: true },
+          { id: 'B', grid: [[0x3b82f6, null, null], [0xef4444, 0x10b981, 0xf59e0b]], isCorrect: false },
+          { id: 'C', grid: [[null, null, 0x3b82f6], [0xef4444, 0x8b5cf6, 0xf59e0b]], isCorrect: false },
+          { id: 'D', grid: [[0x3b82f6, 0x8b5cf6, null], [0xef4444, 0x10b981, 0xf59e0b]], isCorrect: false }
+        ],
+        explanation: "Pandangan Tampak Depan:\n- Kolom kiri: Kubus Biru di atas Kubus Merah.\n- Kolom tengah: Kubus Ungu berada di depan Kubus Hijau, sehingga yang terlihat dari depan adalah Kubus Ungu.\n- Kolom kanan: Kubus Kuning di bawah."
+      },
+      {
+        id: 3,
+        category: "Visualisasi Spasial",
+        type: "Tampak Atas",
+        question: "Perhatikan bentukan kubus berikut. Jika dipandang dari TAMPAK ATAS, konfigurasi 2D manakah yang terbentuk?",
+        cubes: [
+          { pos: [-1, 0, 0], color: 0xec4899 }, // Pink (Kiri Tengah)
+          { pos: [0, 0, 0], color: 0x06b6d4 },  // Cyan (Tengah Tengah)
+          { pos: [0, 1, 0], color: 0x8b5cf6 },  // Ungu (Menutup Cyan dari atas)
+          { pos: [0, 0, -1], color: 0xeab308 }  // Kuning (Tengah Belakang)
+        ],
+        optionsType: "2d-grid-2x2",
+        options: [
+          { id: 'A', grid: [[null, 0xeab308], [0xec4899, 0x8b5cf6]], isCorrect: true },
+          { id: 'B', grid: [[0xeab308, null], [0x8b5cf6, 0xec4899]], isCorrect: false },
+          { id: 'C', grid: [[null, 0xeab308], [0xec4899, 0x06b6d4]], isCorrect: false },
+          { id: 'D', grid: [[0xec4899, 0x8b5cf6], [null, 0xeab308]], isCorrect: false }
+        ],
+        explanation: "Proyeksi Tampak Atas:\n- Baris belakang: Tidak ada kubus di kiri, terdapat Kubus Kuning di kanan/tengah.\n- Baris depan: Kubus Pink di kiri, sedangkan di kanan/tengah Kubus Ungu berada di atas Kubus Cyan sehingga menutupi Cyan dari pandangan atas."
+      },
+      {
+        id: 4,
+        category: "Konstruksi Dadu",
+        type: "Jaring-Jaring Dadu",
+        question: "Pada jaring-jaring dadu berikut, jika dibentuk menjadi sebuah kubus utuh, angka berapakah yang berada di sisi yang BERHADAPAN LANGSUNG dengan angka 2?",
+        isDiceNet: true,
+        optionsType: "text-pilihan",
+        options: [
+          { id: 'A', text: "Sisi Angka 5", isCorrect: true },
+          { id: 'B', text: "Sisi Angka 6", isCorrect: false },
+          { id: 'C', text: "Sisi Angka 3", isCorrect: false },
+          { id: 'D', text: "Sisi Angka 4", isCorrect: false }
+        ],
+        explanation: "Aturan jaring-jaring dadu baku: Sisi 1 berhadapan dengan 6 (atas-bawah), Sisi 4 berhadapan dengan 3 (kiri-kanan), dan Sisi 2 berhadapan dengan Sisi 5."
+      },
+      {
+        id: 5,
+        category: "Konstruksi Bangun Ruang",
+        type: "Jumlah Kubus Minimum",
+        question: "Suatu struktur anak tangga disusun dari kubus-kubus berukuran sama. Berapakah jumlah MINIMUM kubus yang dibutuhkan untuk membentuk struktur seperti gambar?",
+        cubes: [
+          // Baris Belakang (Z = -1): tinggi 3
+          { pos: [0, 0, -1], color: 0x64748b }, { pos: [0, 1, -1], color: 0x64748b }, { pos: [0, 2, -1], color: 0xef4444 },
+          // Baris Tengah (Z = 0): tinggi 2
+          { pos: [0, 0, 0], color: 0x64748b }, { pos: [0, 1, 0], color: 0x3b82f6 },
+          // Baris Depan (Z = 1): tinggi 1
+          { pos: [0, 0, 1], color: 0x10b981 }
+        ],
+        optionsType: "text-pilihan",
+        options: [
+          { id: 'A', text: "6 Kubus", isCorrect: true },
+          { id: 'B', text: "5 Kubus", isCorrect: false },
+          { id: 'C', text: "7 Kubus", isCorrect: false },
+          { id: 'D', text: "8 Kubus", isCorrect: false }
+        ],
+        explanation: "Struktur anak tangga 3 tingkat:\n- Tiang belakang: 3 kubus\n- Tiang tengah: 2 kubus\n- Tiang depan: 1 kubus\nTotal minimum = 3 + 2 + 1 = 6 kubus."
+      },
+      {
+        id: 6,
+        category: "Visualisasi Dadu",
+        type: "Pasangan Sisi Dadu",
+        question: "Diberikan sebuah dadu standar dengan tampilan statis (Top: 6, Front: 2, Right: 4). Berapakah titik pada SISI KIRI (sisi berlawanan dengan tampak kanan)?",
+        isDice: true,
+        diceTop: 6,
+        diceFront: 2,
+        diceRight: 4,
+        optionsType: "text-pilihan",
+        options: [
+          { id: 'A', text: "3 (Tiga)", isCorrect: true },
+          { id: 'B', text: "1 (Satu)", isCorrect: false },
+          { id: 'C', text: "5 (Lima)", isCorrect: false },
+          { id: 'D', text: "2 (Dua)", isCorrect: false }
+        ],
+        explanation: "Dadu standar memiliki pasangan sisi berlawanan berjumlah 7. Sisi Kanan = 4, maka Sisi Kiri = 7 - 4 = 3."
+      },
+      {
+        id: 7,
+        category: "Visualisasi Spasial",
+        type: "Tampak Samping Kanan",
+        question: "Jika susunan 3 kubus berikut diamati tepat dari TAMPAK SAMPING KANAN, manakah susunan warna 2D yang tepat?",
+        cubes: [
+          { pos: [0, 0, 0], color: 0xf59e0b }, // Kuning (Depan Bawah)
+          { pos: [0, 1, 0], color: 0xef4444 }, // Merah (Depan Atas)
+          { pos: [0, 0, -1], color: 0x3b82f6 } // Biru (Belakang Bawah)
+        ],
+        optionsType: "2d-grid-2x2",
+        options: [
+          { id: 'A', grid: [[null, 0xef4444], [0x3b82f6, 0xf59e0b]], isCorrect: true },
+          { id: 'B', grid: [[0xef4444, null], [0xf59e0b, 0x3b82f6]], isCorrect: false },
+          { id: 'C', grid: [[null, 0x3b82f6], [0xef4444, 0xf59e0b]], isCorrect: false },
+          { id: 'D', grid: [[0x3b82f6, 0xef4444], [null, 0xf59e0b]], isCorrect: false }
+        ],
+        explanation: "Pandangan dari Tampak Samping Kanan (Depan ada di kanan tampilan, Belakang ada di kiri tampilan):\n- Kanan Atas: Kubus Merah\n- Kanan Bawah: Kubus Kuning\n- Kiri Bawah: Kubus Biru."
+      },
+      {
+        id: 8,
+        category: "Visualisasi Dadu",
+        type: "Analisis Posisi Dadu",
+        question: "Pada dadu standar di gambar (Top: 1, Front: 5, Right: 3), berapakah total titik jika titik pada SISI BELAKANG dan SISI BAWAH dijumlahkan?",
+        isDice: true,
+        diceTop: 1,
+        diceFront: 5,
+        diceRight: 3,
+        optionsType: "text-pilihan",
+        options: [
+          { id: 'A', text: "8", isCorrect: true },
+          { id: 'B', text: "7", isCorrect: false },
+          { id: 'C', text: "9", isCorrect: false },
+          { id: 'D', text: "6", isCorrect: false }
+        ],
+        explanation: "Penentuan nilai sisi berlawanan:\n- Sisi Belakang = 7 - Sisi Depan (5) = 2\n- Sisi Bawah = 7 - Sisi Atas (1) = 6\nTotal jumlah = 2 + 6 = 8."
+      },
+      {
+        id: 9,
+        category: "Konstruksi Bangun Ruang",
+        type: "Identifikasi Tampak",
+        question: "Perhatikan susunan kubus berbentuk huruf T terbalik berikut. Manakah warna kubus yang terletak di bagian TERINGGI (puncak) dari susunan tersebut?",
+        cubes: [
+          { pos: [-1, 0, 0], color: 0x64748b },
+          { pos: [0, 0, 0], color: 0x64748b },
+          { pos: [1, 0, 0], color: 0x64748b },
+          { pos: [0, 1, 0], color: 0x10b981 },
+          { pos: [0, 2, 0], color: 0xec4899 }
+        ],
+        optionsType: "text-pilihan",
+        options: [
+          { id: 'A', text: "Kubus Pink", isCorrect: true },
+          { id: 'B', text: "Kubus Hijau", isCorrect: false },
+          { id: 'C', text: "Kubus Abu-abu", isCorrect: false },
+          { id: 'D', text: "Kubus Biru", isCorrect: false }
+        ],
+        explanation: "Pada koordinat ketinggian (Y):\n- Y = 0 (Alas): Kubus-kubus abu-abu\n- Y = 1: Kubus Hijau\n- Y = 2 (Puncak): Kubus Pink."
+      },
+      {
+        id: 10,
+        category: "Konstruksi Dadu",
+        type: "Jaring-Jaring Dadu",
+        question: "Apabila jaring-jaring dadu di bawah ini dilipat, sisi manakah yang BERHADAPAN LANGSUNG dengan Sisi 1?",
+        isDiceNet: true,
+        optionsType: "text-pilihan",
+        options: [
+          { id: 'A', text: "Sisi Angka 6", isCorrect: true },
+          { id: 'B', text: "Sisi Angka 2", isCorrect: false },
+          { id: 'C', text: "Sisi Angka 4", isCorrect: false },
+          { id: 'D', text: "Sisi Angka 5", isCorrect: false }
+        ],
+        explanation: "Pada jaring-jaring dadu vertikal (sisi 1 di atas, sisi 6 di bawah), saat seluruh jaring-jaring dilipat menjadi kubus 3D, Sisi 1 (tutup atas) akan tepat berhadapan dengan Sisi 6 (alas bawah)."
+      }
+    ];
+
+    // --- APP STATE ---
+    let currentQuestionIdx = 0;
+    let userAnswers = new Array(questions.length).fill(null);
+    let timerSeconds = 20 * 60;
+    let timerInterval = null;
+
+    // ThreeJS Globals for Fixed Main Canvas
+    let mainScene, mainCamera, mainRenderer, mainGroup;
+
+    // --- INITIALIZATION ---
+    window.onload = function() {
+      lucide.createIcons();
+      initMainThreeJS();
+      renderNavGrid();
+      loadQuestion(0);
+      startTimer();
+    };
+
+    // --- THREE.JS ENGINE SETUP (STATIC VIEWPOINT ONLY) ---
+    function initMainThreeJS() {
+      const container = document.getElementById('main-canvas-box');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      mainScene = new THREE.Scene();
+      mainScene.background = new THREE.Color(0xf8fafc);
+
+      // Fixed Camera position for static spatial visual (Isometric Angle)
+      mainCamera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
+      mainCamera.position.set(5.5, 4.5, 6.5);
+      mainCamera.lookAt(0, 0, 0);
+
+      mainRenderer = new THREE.WebGLRenderer({ antialias: true });
+      mainRenderer.setSize(width, height);
+      mainRenderer.shadowMap.enabled = true;
+      container.appendChild(mainRenderer.domElement);
+
+      // Lighting setup
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+      mainScene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.55);
+      dirLight.position.set(6, 12, 8);
+      dirLight.castShadow = true;
+      mainScene.add(dirLight);
+
+      // Isometric Reference Grid Floor
+      const gridHelper = new THREE.GridHelper(10, 10, 0x94a3b8, 0xe2e8f0);
+      gridHelper.position.y = -0.51;
+      mainScene.add(gridHelper);
+
+      // Object Container Group (Fixed Rotation angle, mouse control disabled)
+      mainGroup = new THREE.Group();
+      mainScene.add(mainGroup);
+
+      window.addEventListener('resize', onWindowResize);
+      animate();
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      mainRenderer.render(mainScene, mainCamera);
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById('main-canvas-box');
+      if (!container) return;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      mainCamera.aspect = width / height;
+      mainCamera.updateProjectionMatrix();
+      mainRenderer.setSize(width, height);
+    }
+
+    // --- BUILDERS FOR STATIC 3D OBJECTS ---
+    function buildCubesGroup(cubesData) {
+      while(mainGroup.children.length > 0){ mainGroup.remove(mainGroup.children[0]); }
+      // Fixed static orientation angle
+      mainGroup.rotation.set(0, 0, 0);
+
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, minZ = Infinity, maxZ = -Infinity;
+      cubesData.forEach(c => {
+        minX = Math.min(minX, c.pos[0]); maxX = Math.max(maxX, c.pos[0]);
+        minY = Math.min(minY, c.pos[1]); maxY = Math.max(maxY, c.pos[1]);
+        minZ = Math.min(minZ, c.pos[2]); maxZ = Math.max(maxZ, c.pos[2]);
+      });
+      const offsetX = (minX + maxX) / 2;
+      const offsetY = (minY + maxY) / 2;
+      const offsetZ = (minZ + maxZ) / 2;
+
+      const geometry = new THREE.BoxGeometry(0.96, 0.96, 0.96);
+
+      cubesData.forEach(item => {
+        const material = new THREE.MeshPhongMaterial({ 
+          color: item.color, 
+          shininess: 30,
+          flatShading: true
+        });
+        const cube = new THREE.Mesh(geometry, material);
+        cube.position.set(item.pos[0] - offsetX, item.pos[1] - offsetY, item.pos[2] - offsetZ);
+        
+        // Edge lines for crisp visual spatial distinction
+        const edges = new THREE.EdgesGeometry(geometry);
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x0f172a, linewidth: 2 }));
+        cube.add(line);
+
+        mainGroup.add(cube);
+      });
+    }
+
+    function createDiceFaceTexture(dotsCount) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 128, 128);
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 10;
+      ctx.strokeRect(0, 0, 128, 128);
+
+      ctx.fillStyle = '#0f172a';
+      const drawDot = (x, y) => {
+        ctx.beginPath();
+        ctx.arc(x, y, 12, 0, Math.PI * 2);
+        ctx.fill();
+      };
+
+      const p1 = 32, p2 = 64, p3 = 96;
+
+      if (dotsCount === 1) drawDot(p2, p2);
+      if (dotsCount === 2) { drawDot(p1, p1); drawDot(p3, p3); }
+      if (dotsCount === 3) { drawDot(p1, p1); drawDot(p2, p2); drawDot(p3, p3); }
+      if (dotsCount === 4) { drawDot(p1, p1); drawDot(p3, p1); drawDot(p1, p3); drawDot(p3, p3); }
+      if (dotsCount === 5) { drawDot(p1, p1); drawDot(p3, p1); drawDot(p2, p2); drawDot(p1, p3); drawDot(p3, p3); }
+      if (dotsCount === 6) { drawDot(p1, p1); drawDot(p3, p1); drawDot(p1, p2); drawDot(p3, p2); drawDot(p1, p3); drawDot(p3, p3); }
+
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    function buildDiceGroup(topVal, frontVal, rightVal) {
+      while(mainGroup.children.length > 0){ mainGroup.remove(mainGroup.children[0]); }
+      mainGroup.rotation.set(0, 0, 0);
+
+      const bottomVal = 7 - topVal;
+      const backVal = 7 - frontVal;
+      const leftVal = 7 - rightVal;
+
+      const materials = [
+        new THREE.MeshBasicMaterial({ map: createDiceFaceTexture(rightVal) }),
+        new THREE.MeshBasicMaterial({ map: createDiceFaceTexture(leftVal) }),
+        new THREE.MeshBasicMaterial({ map: createDiceFaceTexture(topVal) }),
+        new THREE.MeshBasicMaterial({ map: createDiceFaceTexture(bottomVal) }),
+        new THREE.MeshBasicMaterial({ map: createDiceFaceTexture(frontVal) }),
+        new THREE.MeshBasicMaterial({ map: createDiceFaceTexture(backVal) })
+      ];
+
+      const geometry = new THREE.BoxGeometry(1.8, 1.8, 1.8);
+      const diceMesh = new THREE.Mesh(geometry, materials);
+
+      const edges = new THREE.EdgesGeometry(geometry);
+      const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }));
+      diceMesh.add(line);
+
+      mainGroup.add(diceMesh);
+    }
+
+    function render2DDiceNetHTML() {
+      return `
+        <div class="flex flex-col items-center justify-center py-4 bg-slate-50 rounded-lg">
+          <div class="text-xs text-slate-500 font-medium mb-2">Jaring-Jaring Dadu 2D (Statis)</div>
+          <div class="grid grid-cols-4 gap-1.5 p-3 bg-slate-200 rounded-lg shadow-inner">
+            <div></div>
+            <div class="w-10 h-10 bg-white border-2 border-slate-700 rounded flex items-center justify-center font-bold text-slate-800 shadow-sm">1</div>
+            <div></div>
+            <div></div>
+            
+            <div class="w-10 h-10 bg-white border-2 border-slate-700 rounded flex items-center justify-center font-bold text-slate-800 shadow-sm">4</div>
+            <div class="w-10 h-10 bg-white border-2 border-slate-700 rounded flex items-center justify-center font-bold text-slate-800 shadow-sm">2</div>
+            <div class="w-10 h-10 bg-indigo-100 border-2 border-indigo-600 rounded flex items-center justify-center font-bold text-indigo-700 shadow-sm">3</div>
+            <div class="w-10 h-10 bg-white border-2 border-slate-700 rounded flex items-center justify-center font-bold text-slate-800 shadow-sm">5</div>
+            
+            <div></div>
+            <div class="w-10 h-10 bg-white border-2 border-slate-700 rounded flex items-center justify-center font-bold text-slate-800 shadow-sm">6</div>
+            <div></div>
+            <div></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- QUESTION CONTROLLER ---
+    function loadQuestion(index) {
+      currentQuestionIdx = index;
+      const q = questions[index];
+
+      document.getElementById('question-category').innerText = q.category;
+      document.getElementById('question-type-badge').innerText = `Tipe: ${q.type}`;
+      document.getElementById('question-text').innerText = `Soal ${q.id}: ${q.question}`;
+      document.getElementById('progress-display').innerText = `${q.id} / ${questions.length} Soal`;
+
+      const canvasContainer = document.getElementById('main-canvas-box');
+
+      if (q.isDiceNet) {
+        canvasContainer.style.display = 'none';
+        let netBox = document.getElementById('dice-net-box');
+        if (!netBox) {
+          netBox = document.createElement('div');
+          netBox.id = 'dice-net-box';
+          canvasContainer.parentNode.insertBefore(netBox, canvasContainer);
+        }
+        netBox.style.display = 'block';
+        netBox.innerHTML = render2DDiceNetHTML();
+      } else {
+        canvasContainer.style.display = 'block';
+        const netBox = document.getElementById('dice-net-box');
+        if (netBox) netBox.style.display = 'none';
+
+        if (q.isDice) {
+          buildDiceGroup(q.diceTop, q.diceFront, q.diceRight);
+        } else if (q.cubes) {
+          buildCubesGroup(q.cubes);
+        }
+      }
+
+      renderOptions(q);
+
+      const expBox = document.getElementById('explanation-box');
+      if (userAnswers[index] !== null) {
+        expBox.classList.remove('hidden');
+        document.getElementById('explanation-text').innerText = q.explanation;
+      } else {
+        expBox.classList.add('hidden');
+      }
+
+      document.getElementById('btn-prev').disabled = (index === 0);
+      if (index === questions.length - 1) {
+        document.getElementById('btn-next').classList.add('hidden');
+        document.getElementById('btn-submit').classList.remove('hidden');
+      } else {
+        document.getElementById('btn-next').classList.remove('hidden');
+        document.getElementById('btn-submit').classList.add('hidden');
+      }
+
+      updateNavGridButtons();
+    }
+
+    // --- RENDER OPTIONS ---
+    function renderOptions(q) {
+      const container = document.getElementById('options-container');
+      container.innerHTML = '';
+
+      const selectedOptionId = userAnswers[currentQuestionIdx];
+
+      if (q.optionsType.startsWith('2d-grid')) {
+        container.className = "grid grid-cols-2 gap-4 mb-6";
+
+        q.options.forEach(opt => {
+          const isSelected = (selectedOptionId === opt.id);
+          const optDiv = document.createElement('div');
+          optDiv.className = `p-3 rounded-xl border-2 cursor-pointer transition flex flex-col items-center gap-2 ${
+            isSelected 
+              ? 'border-indigo-600 bg-indigo-50/50 ring-2 ring-indigo-200' 
+              : 'border-slate-200 hover:border-slate-300 bg-white'
+          }`;
+          optDiv.onclick = () => selectOption(opt.id);
+
+          let gridHtml = `<div class="grid gap-1 p-2 bg-slate-100 rounded-lg shadow-inner">`;
+          opt.grid.forEach(row => {
+            gridHtml += `<div class="flex gap-1">`;
+            row.forEach(cellColor => {
+              if (cellColor !== null) {
+                const hexStr = `#${cellColor.toString(16).padStart(6, '0')}`;
+                gridHtml += `<div class="w-7 h-7 rounded border border-slate-400/30 shadow-sm" style="background-color: ${hexStr}"></div>`;
+              } else {
+                gridHtml += `<div class="w-7 h-7 rounded bg-transparent"></div>`;
+              }
+            });
+            gridHtml += `</div>`;
+          });
+          gridHtml += `</div>`;
+
+          optDiv.innerHTML = `
+            <div class="w-full flex items-center justify-between">
+              <span class="w-6 h-6 rounded-full ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-700'} text-xs font-bold flex items-center justify-center">${opt.id}</span>
+              ${isSelected ? '<i data-lucide="check-circle-2" class="w-4 h-4 text-indigo-600"></i>' : ''}
+            </div>
+            ${gridHtml}
+          `;
+          container.appendChild(optDiv);
+        });
+
+      } else {
+        container.className = "space-y-3 mb-6";
+
+        q.options.forEach(opt => {
+          const isSelected = (selectedOptionId === opt.id);
+          const btn = document.createElement('button');
+          btn.className = `w-full text-left p-3.5 rounded-xl border-2 transition flex items-center justify-between ${
+            isSelected 
+              ? 'border-indigo-600 bg-indigo-50/50 text-indigo-950 font-medium ring-2 ring-indigo-200' 
+              : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
+          }`;
+          btn.onclick = () => selectOption(opt.id);
+
+          btn.innerHTML = `
+            <div class="flex items-center gap-3">
+              <span class="w-7 h-7 rounded-lg ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'} text-xs font-bold flex items-center justify-center">${opt.id}</span>
+              <span class="text-sm">${opt.text}</span>
+            </div>
+            ${isSelected ? '<i data-lucide="check-circle-2" class="w-5 h-5 text-indigo-600"></i>' : ''}
+          `;
+          container.appendChild(btn);
+        });
+      }
+
+      lucide.createIcons();
+    }
+
+    // --- NAVIGATION & USER LOGIC ---
+    function selectOption(optionId) {
+      userAnswers[currentQuestionIdx] = optionId;
+      renderOptions(questions[currentQuestionIdx]);
+      updateNavGridButtons();
+
+      const expBox = document.getElementById('explanation-box');
+      expBox.classList.remove('hidden');
+      document.getElementById('explanation-text').innerText = questions[currentQuestionIdx].explanation;
+    }
+
+    function navigateQuestion(direction) {
+      const newIdx = currentQuestionIdx + direction;
+      if (newIdx >= 0 && newIdx < questions.length) {
+        loadQuestion(newIdx);
+      }
+    }
+
+    function renderNavGrid() {
+      const navGrid = document.getElementById('question-nav-grid');
+      navGrid.innerHTML = '';
+
+      questions.forEach((q, idx) => {
+        const btn = document.createElement('button');
+        btn.id = `nav-btn-${idx}`;
+        btn.className = 'w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition border';
+        btn.innerText = idx + 1;
+        btn.onclick = () => loadQuestion(idx);
+        navGrid.appendChild(btn);
+      });
+      updateNavGridButtons();
+    }
+
+    function updateNavGridButtons() {
+      questions.forEach((q, idx) => {
+        const btn = document.getElementById(`nav-btn-${idx}`);
+        if (!btn) return;
+
+        const isCurrent = (idx === currentQuestionIdx);
+        const isAnswered = (userAnswers[idx] !== null);
+
+        if (isCurrent) {
+          btn.className = 'w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-300';
+        } else if (isAnswered) {
+          btn.className = 'w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition bg-emerald-500 text-white border-emerald-500';
+        } else {
+          btn.className = 'w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center transition bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200';
+        }
+      });
+    }
+
+    // --- TIMER SYSTEM ---
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        timerSeconds--;
+        const mins = Math.floor(timerSeconds / 60);
+        const secs = timerSeconds % 60;
+        document.getElementById('timer-display').innerText = 
+          `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+        if (timerSeconds <= 0) {
+          clearInterval(timerInterval);
+          showScoreModal();
+        }
+      }, 1000);
+    }
+
+    // --- RESULT EVALUATION ---
+    function showScoreModal() {
+      let correctCount = 0;
+
+      questions.forEach((q, idx) => {
+        const userAns = userAnswers[idx];
+        const correctOpt = q.options.find(o => o.isCorrect);
+        if (userAns && correctOpt && userAns === correctOpt.id) {
+          correctCount++;
+        }
+      });
+
+      const score = Math.round((correctCount / questions.length) * 100);
+
+      document.getElementById('final-score').innerText = score;
+      document.getElementById('final-correct').innerText = `${correctCount}/${questions.length}`;
+
+      let feedback = "";
+      if (score >= 90) {
+        feedback = "Sangat Luar biasa! Kemampuan visualisasi spasial mental Anda sangat tinggi.";
+      } else if (score >= 60) {
+        feedback = "Bagus! Pemahaman rotasi dan proyeksi spasial Anda sudah cukup baik.";
+      } else {
+        feedback = "Perlu terus berlatih membayangkan rotasi proyeksi 2D ke 3D secara cermat.";
+      }
+      document.getElementById('performance-feedback').innerText = feedback;
+
+      document.getElementById('result-modal').classList.remove('hidden');
+    }
+
+    function reviewAnswers() {
+      document.getElementById('result-modal').classList.add('hidden');
+      loadQuestion(0);
+    }
+
+    function restartTest() {
+      userAnswers = new Array(questions.length).fill(null);
+      timerSeconds = 20 * 60;
+      document.getElementById('result-modal').classList.add('hidden');
+      loadQuestion(0);
+    }
+  </script>
+</body>
+</html>
